@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Preview Generator</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        
+        .form-container {
+            background-color: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+        }
+        
+        .form-group {
+            margin-bottom: 15px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        
+        input[type="url"], input[type="text"], textarea {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        
+        textarea {
+            min-height: 80px;
+            resize: vertical;
+        }
+        
+        button {
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 4px;
+            display: block;
+            margin: 20px auto 0;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background-color: #357ae8;
+        }
+        
+        .preview-card {
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background-color: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin: 20px 0;
+            overflow: hidden;
+            display: none;
+        }
+        
+        .preview-content {
+            padding: 15px;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+        }
+        
+        .site-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .site-title {
+            font-weight: bold;
+            font-size: 18px;
+            margin: 0 0 8px 0;
+            color: #333;
+        }
+        
+        .site-description {
+            font-size: 14px;
+            color: #666;
+            margin: 0 0 8px 0;
+            line-height: 1.4;
+        }
+        
+        .site-url {
+            font-size: 12px;
+            color: #999;
+            margin: 0;
+            text-overflow: ellipsis;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+        
+        .site-logo {
+            margin-left: 15px;
+            max-width: 100px;
+            height: auto;
+        }
+        
+        .favicon {
+            width: 16px;
+            height: 16px;
+            margin-right: 4px;
+            vertical-align: middle;
+        }
+        
+        .code-container {
+            margin-top: 30px;
+            display: none;
+        }
+        
+        .code-tabs {
+            display: flex;
+            margin-bottom: 0;
+            border-bottom: 1px solid #ddd;
+        }
+        
+        .code-tab {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f0f0f0;
+            border-radius: 4px 4px 0 0;
+            margin-right: 4px;
+        }
+        
+        .code-tab.active {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+        }
+        
+        .code-content {
+            padding: 15px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-top: none;
+            border-radius: 0 0 4px 4px;
+        }
+        
+        pre {
+            background-color: #f8f8f8;
+            padding: 15px;
+            overflow-x: auto;
+            margin: 0;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        
+        .copy-btn {
+            background-color: #eee;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 6px 12px;
+            font-size: 14px;
+            float: right;
+            margin-bottom: 10px;
+            cursor: pointer;
+        }
+        
+        .copy-btn:hover {
+            background-color: #e0e0e0;
+        }
+        
+        .help-text {
+            font-size: 14px;
+            color: #666;
+            margin-top: 5px;
+        }
+        
+        .tabs {
+            display: flex;
+            border-bottom: 1px solid #ddd;
+            margin: 0;
+            padding: 0;
+            list-style: none;
+        }
+        
+        .tab-item {
+            padding: 10px 20px;
+            cursor: pointer;
+            background-color: #f0f0f0;
+            border-radius: 4px 4px 0 0;
+            margin-right: 4px;
+        }
+        
+        .tab-item.active {
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-bottom: 1px solid white;
+            margin-bottom: -1px;
+        }
+        
+        .tab-content {
+            display: none;
+        }
+        
+        .tab-content.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <h1>URL Preview Generator</h1>
+    
+    <ul class="tabs">
+        <li class="tab-item active" data-tab="manual-tab">手動入力</li>
+        <li class="tab-item" data-tab="url-tab">URL入力 (ローカル環境のみ)</li>
+    </ul>
+    
+    <div id="manual-tab" class="tab-content active">
+        <div class="form-container">
+            <div class="form-group">
+                <label for="site-url-input">Webサイト URL:</label>
+                <input type="url" id="site-url-input" placeholder="https://example.com" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="site-title-input">タイトル:</label>
+                <input type="text" id="site-title-input" placeholder="Webサイトのタイトル" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="site-description-input">説明:</label>
+                <textarea id="site-description-input" placeholder="Webサイトの説明"></textarea>
+            </div>
+            
+            <div class="form-group">
+                <label for="site-favicon-input">ファビコンのURL: <span class="help-text">(空白の場合はデフォルトを使用)</span></label>
+                <input type="url" id="site-favicon-input" placeholder="https://example.com/favicon.ico">
+            </div>
+            
+            <div class="form-group">
+                <label for="site-logo-input">ロゴイメージURL: <span class="help-text">(省略可)</span></label>
+                <input type="url" id="site-logo-input" placeholder="https://example.com/logo.png">
+            </div>
+            
+            <button id="manual-generate-btn">プレビュー生成</button>
+        </div>
+    </div>
+    
+    <div id="url-tab" class="tab-content">
+        <div class="form-container">
+            <div class="form-group">
+                <label for="url-input">URL:</label>
+                <input type="url" id="url-input" placeholder="https://example.com" required>
+                <p class="help-text">注意: CORSの制限により、この機能はローカル環境でのみ動作します。GitHub Pagesでは利用できません。</p>
+            </div>
+            
+            <button id="url-generate-btn">情報取得 & プレビュー生成</button>
+        </div>
+    </div>
+    
+    <div class="preview-card" id="preview-card">
+        <div class="preview-content">
+            <div class="site-info">
+                <h2 class="site-title" id="site-title">Website Title</h2>
+                <p class="site-description" id="site-description">Website description goes here.</p>
+                <p class="site-url" id="site-url"><img id="favicon" src="" class="favicon" alt="">https://example.com</p>
+            </div>
+            <img id="site-logo" class="site-logo" src="" alt="Website Logo">
+        </div>
+    </div>
+    
+    <div class="code-container" id="code-container">
+        <div class="code-tabs">
+            <div class="code-tab active" data-tab="html">HTML</div>
+            <div class="code-tab" data-tab="css">CSS</div>
+        </div>
+        
+        <div class="code-content">
+            <button class="copy-btn" id="copy-btn">Copy Code</button>
+            <pre id="code-output"></pre>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Tab switching
+            const tabItems = document.querySelectorAll('.tab-item');
+            const tabContents = document.querySelectorAll('.tab-content');
+            
+            tabItems.forEach(item => {
+                item.addEventListener('click', function() {
+                    const tabId = this.getAttribute('data-tab');
+                    
+                    // Update active tab
+                    tabItems.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update active content
+                    tabContents.forEach(c => c.classList.remove('active'));
+                    document.getElementById(tabId).classList.add('active');
+                });
+            });
+            
+            // Manual input form
+            const siteUrlInput = document.getElementById('site-url-input');
+            const siteTitleInput = document.getElementById('site-title-input');
+            const siteDescriptionInput = document.getElementById('site-description-input');
+            const siteFaviconInput = document.getElementById('site-favicon-input');
+            const siteLogoInput = document.getElementById('site-logo-input');
+            const manualGenerateBtn = document.getElementById('manual-generate-btn');
+            
+            // URL input form
+            const urlInput = document.getElementById('url-input');
+            const urlGenerateBtn = document.getElementById('url-generate-btn');
+            
+            // Shared elements
+            const previewCard = document.getElementById('preview-card');
+            const siteTitle = document.getElementById('site-title');
+            const siteDescription = document.getElementById('site-description');
+            const siteUrl = document.getElementById('site-url');
+            const siteLogo = document.getElementById('site-logo');
+            const favicon = document.getElementById('favicon');
+            const codeContainer = document.getElementById('code-container');
+            const codeOutput = document.getElementById('code-output');
+            const copyBtn = document.getElementById('copy-btn');
+            const codeTabs = document.querySelectorAll('.code-tab');
+            
+            let htmlCode = '';
+            let cssCode = '';
+            
+            // Handle manual input generation
+            manualGenerateBtn.addEventListener('click', function() {
+                const url = siteUrlInput.value.trim();
+                const title = siteTitleInput.value.trim();
+                const description = siteDescriptionInput.value.trim();
+                const faviconUrl = siteFaviconInput.value.trim();
+                const logoUrl = siteLogoInput.value.trim();
+                
+                if (!url || !title) {
+                    alert('URLとタイトルは必須です');
+                    return;
+                }
+                
+                // Generate preview
+                generatePreview({
+                    url,
+                    title,
+                    description: description || 'No description available',
+                    faviconUrl: faviconUrl || 'https://www.google.com/s2/favicons?domain=' + url,
+                    logoUrl
+                });
+            });
+            
+            // Handle URL input generation (works only locally)
+            urlGenerateBtn.addEventListener('click', function() {
+                const url = urlInput.value.trim();
+                
+                if (!url) {
+                    alert('URLを入力してください');
+                    return;
+                }
+                
+                try {
+                    // For local development only - will fail on GitHub Pages
+                    fetchSiteInfo(url);
+                } catch (error) {
+                    console.error('Error:', error);
+                    alert('CORS制限により、この機能はローカル環境でのみ動作します。手動入力タブを使用してください。');
+                }
+            });
+            
+            // Dummy fetch function that will only work in local development
+            async function fetchSiteInfo(url) {
+                try {
+                    // This will fail due to CORS on GitHub Pages
+                    alert('CORS制限により、この機能はローカル環境でのみ動作します。手動入力タブを使用してください。');
+                } catch (error) {
+                    console.error('Error fetching site info:', error);
+                    alert('CORS制限により、この機能はローカル環境でのみ動作します。手動入力タブを使用してください。');
+                }
+            }
+            
+            // Generate preview from data
+            function generatePreview(data) {
+                // Update preview card
+                siteTitle.textContent = data.title;
+                siteDescription.textContent = data.description;
+                siteUrl.innerHTML = `<img id="favicon" src="${data.faviconUrl}" class="favicon" alt="">${data.url}`;
+                
+                if (data.logoUrl) {
+                    siteLogo.src = data.logoUrl;
+                    siteLogo.style.display = 'block';
+                } else {
+                    siteLogo.style.display = 'none';
+                }
+                
+                // Generate code
+                generateCode(data);
+                
+                // Show preview
+                previewCard.style.display = 'block';
+                codeContainer.style.display = 'block';
+            }
+            
+            // Generate HTML and CSS code
+            function generateCode(data) {
+                // Generate HTML code
+                htmlCode = `<!-- URL Preview Card -->
+<div class="url-preview-card">
+    <div class="url-preview-content">
+        <div class="url-site-info">
+            <h2 class="url-site-title">${data.title}</h2>
+            <p class="url-site-description">${data.description}</p>
+            <p class="url-site-url"><img src="${data.faviconUrl}" class="url-favicon" alt="">${data.url}</p>
+        </div>
+        ${data.logoUrl ? `<img class="url-site-logo" src="${data.logoUrl}" alt="${data.title} logo">` : ''}
+    </div>
+</div>`;
+
+                // Generate CSS code
+                cssCode = `.url-preview-card {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    background-color: white;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    margin: 20px 0;
+    overflow: hidden;
+}
+
+.url-preview-content {
+    padding: 15px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+}
+
+.url-site-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.url-site-title {
+    font-weight: bold;
+    font-size: 18px;
+    margin: 0 0 8px 0;
+    color: #333;
+}
+
+.url-site-description {
+    font-size: 14px;
+    color: #666;
+    margin: 0 0 8px 0;
+    line-height: 1.4;
+}
+
+.url-site-url {
+    font-size: 12px;
+    color: #999;
+    margin: 0;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+}
+
+.url-site-logo {
+    margin-left: 15px;
+    max-width: 100px;
+    height: auto;
+}
+
+.url-favicon {
+    width: 16px;
+    height: 16px;
+    margin-right: 4px;
+    vertical-align: middle;
+}`;
+
+                // Update code display (default to HTML)
+                codeOutput.textContent = htmlCode;
+                document.querySelector('.code-tab[data-tab="html"]').classList.add('active');
+                document.querySelector('.code-tab[data-tab="css"]').classList.remove('active');
+            }
+            
+            // Handle code tabs
+            codeTabs.forEach(tab => {
+                tab.addEventListener('click', function() {
+                    const tabType = this.getAttribute('data-tab');
+                    
+                    // Update active tab
+                    codeTabs.forEach(t => t.classList.remove('active'));
+                    this.classList.add('active');
+                    
+                    // Update code display
+                    if (tabType === 'html') {
+                        codeOutput.textContent = htmlCode;
+                    } else if (tabType === 'css') {
+                        codeOutput.textContent = cssCode;
+                    }
+                });
+            });
+            
+            // Copy code to clipboard
+            copyBtn.addEventListener('click', function() {
+                const textToCopy = codeOutput.textContent;
+                
+                navigator.clipboard.writeText(textToCopy)
+                    .then(() => {
+                        const originalText = copyBtn.textContent;
+                        copyBtn.textContent = 'Copied!';
+                        
+                        setTimeout(() => {
+                            copyBtn.textContent = originalText;
+                        }, 2000);
+                    })
+                    .catch(err => {
+                        console.error('Failed to copy: ', err);
+                        alert('Failed to copy code. Please try again.');
+                    });
+            });
+            
+            // Example data for quick testing
+            document.addEventListener('keydown', function(e) {
+                // Press Ctrl+Shift+E to fill with example data
+                if (e.ctrlKey && e.shiftKey && e.key === 'E') {
+                    siteUrlInput.value = 'https://www.netbk.co.jp/';
+                    siteTitleInput.value = 'NEOBANK 住信SBIネット銀行';
+                    siteDescriptionInput.value = '住信SBIネット銀行へようこそ。定期預金、外貨預金、住宅ローン、カードローンなどのサービスやキャンペーンが充実した。初心者にもおすすめできるネット銀行です。';
+                    siteFaviconInput.value = 'https://www.netbk.co.jp/favicon.ico';
+                    siteLogoInput.value = 'https://www.netbk.co.jp/contents/img/common/logo.svg';
+                }
+            });
+        });
+    </script>
+</body>
+</html>
